@@ -514,3 +514,18 @@ body {
     color: #fff;
     text-shadow: 0 0 10px #fff, 0 0 20px #0f0;
 }
+
+.logo-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.logo-stack img {
+    width: 30px;
+    height: 30px;
+    margin: 5px 0;
+    filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.8));
+    animation: glow 1.5s infinite alternate;
+}
