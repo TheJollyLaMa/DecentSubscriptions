@@ -529,3 +529,31 @@ body {
     filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.8));
     animation: glow 1.5s infinite alternate;
 }
+
+#landingVideoContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8); /* Optional background overlay */
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+#landingVideoContainer.active {
+    visibility: visible;
+    opacity: 0.6;
+}
+
+#landingPageVideo {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+}

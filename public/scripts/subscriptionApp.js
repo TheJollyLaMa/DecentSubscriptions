@@ -5,6 +5,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     const aboutModal = document.getElementById("aboutModal");
     const closeModal = document.getElementById("closeModal");
 
+    // Subscribe While Waiting Alien video
+    const videoContainer = document.getElementById("landingVideoContainer");
+    const idleTimeLimit = 10000; // 20 seconds
+    let idleTimer;
+
+    const resetIdleTimer = () => {
+        clearTimeout(idleTimer);
+        if (videoContainer.classList.contains("active")) {
+            videoContainer.classList.remove("active");
+            // set autoplay to false
+            document.getElementById("landingPageVideo").pause();
+            // set muted to on so sound does not play
+            document.getElementById("landingPageVideo").muted = true;
+        }
+        idleTimer = setTimeout(() => {
+            videoContainer.classList.add("active");
+            // set autoplay to true
+            document.getElementById("landingPageVideo").play();
+            // set muted to off so sound plays
+            document.getElementById("landingPageVideo").muted = false;
+
+        }, idleTimeLimit);
+    };
+
+    // Reset the idle timer on user interaction
+    ["mousemove", "keydown", "scroll", "click", "touchstart"].forEach((event) => {
+        document.addEventListener(event, resetIdleTimer);
+    });
+
+    // Initialize the idle timer
+    resetIdleTimer();
+
     // Open modal on button click
     aboutButton.addEventListener("click", () => {
         aboutModal.style.display = "block";
