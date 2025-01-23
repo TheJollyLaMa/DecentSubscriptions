@@ -62,6 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             await initializeContract(contractAddress);
             try {
                 const fee = await fetchSubscriptionFee();
+                const accumulatedFees = await fetchAccumulatedFees();
 
             } catch (error) {
                 console.error("Failed to fetch subscription fee:", error.message);
@@ -91,7 +92,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Subscription Actions
     document.getElementById("subscribeButton").addEventListener("click", subscribeUser);
     document.getElementById("cancelButton").addEventListener("click", cancelSubscription);
+
+    // Withdraw Fees
+    document.getElementById("withdrawButton").addEventListener("click", withdrawFees);
+
 });
+
+
+
+// Fetch the accumulated subscription fees
+async function fetchAccumulatedFees() {
+    try {
+        const balance = await window.walletProvider.getBalance(window.subscriptionContract.address);
+        const formattedBalance = ethers.utils.formatUnits(balance, "ether"); // Convert wei to POL
+        document.getElementById("accumulatedFees").textContent = formattedBalance;
+    } catch (error) {
+        console.error("Error fetching accumulated fees:", error.message);
+        document.getElementById("accumulatedFees").textContent = "Error";
+    }
+}
+
+// Call the withdraw function from the contract
+async function withdrawFees() {
+    try {
+        const withdrawButton = document.getElementById("withdrawButton");
+        withdrawButton.disabled = true; // Prevent multiple clicks
+        const tx = await subscriptionContract.withdraw();
+        document.getElementById("withdrawStatus").textContent = "Processing withdrawal...";
+        await tx.wait();
+        alert("Withdrawal successful!");
+        document.getElementById("withdrawStatus").textContent = "Withdrawal successful!";
+        await fetchAccumulatedFees(); // Update the displayed balance
+    } catch (error) {
+        console.error("Error withdrawing fees:", error.message);
+        alert("Withdrawal failed. Please try again.");
+        document.getElementById("withdrawStatus").textContent = "Withdrawal failed.";
+    } finally {
+        document.getElementById("withdrawButton").disabled = false; // Re-enable button
+    }
+}
+
+
+
+
 // Fetch Subscription Fee
 async function fetchSubscriptionFee() {
     try {

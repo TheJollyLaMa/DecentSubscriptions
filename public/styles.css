@@ -557,3 +557,44 @@ body {
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
 }
+
+
+.withdrawFees {
+    text-align: center;
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 0 10px #0ff, 0 0 20px #00f;
+}
+
+.neon-button {
+    background: transparent;
+    color: #fff;
+    border: 2px solid #0ff;
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    border-radius: 5px;
+    text-shadow: 0 0 5px #0ff, 0 0 10px #0ff;
+    box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+}
+
+.neon-button:hover {
+    box-shadow: 0 0 20px #fff, 0 0 40px #0f0;
+}
+
+#withdrawStatus {
+    margin-top: 10px;
+    color: #ff0;
+    text-shadow: 0 0 5px #ff0, 0 0 10px #f0f;
+}
+
+#accumulatedFees {
+    margin: 10px;
+    padding: 5px;
+    border-radius: 10px;
+    color: rgba(17, 197, 1, 0.777);
+    text-shadow: 2px 2px 2px rgba(132, 0, 255, 0.782), 0 0 5px rgb(255, 255, 255);
+    box-shadow: 0 0 10px rgba(132, 0, 255, 0.782), 0 0 20px rgba(251, 255, 0, 0.634);
+}

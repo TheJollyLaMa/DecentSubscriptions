@@ -11,6 +11,7 @@ async function connectWallet() {
     try {
         // Connect wallet
         walletProvider = new ethers.providers.Web3Provider(window.ethereum);
+        window.walletProvider = walletProvider;
         const accounts = await walletProvider.send("eth_requestAccounts", []);
         userAddress = accounts[0];
 
@@ -36,7 +37,7 @@ async function initializeContract(contractAddress) {
         const abi = await loadABI();
         const signer = walletProvider.getSigner();
         subscriptionContract = new ethers.Contract(contractAddress, abi, signer);
-
+        window.subscriptionContract = subscriptionContract;
         console.log("Decent Subscription Contract Initialized:", subscriptionContract.address);
 
         // Display contract addressd
