@@ -1,10 +1,8 @@
 # ⚸ 🔆[DecentSubscriptions](https://TheJollyLaMa.github.io/DecentSubscriptions/public)
 
-A Decent Super Simple Smart Subscriber button
-
----
-
 ![Decent Subscription](./assets/SecretPyramid.png)
+
+A Decent, Simple, Smart Subscriber button
 
 ---
 
@@ -44,7 +42,7 @@ A Decent Super Simple Smart Subscriber button
 
     Alternatively, you can use any other HTTP server like Node.js or VS Code Live Server.
     npx http-server public
-    
+
 ## 🖌️ How to Make CSS Changes
 	1.	Open the styles.css file in the public/ folder.
 	2.	Find the section you’d like to modify. For example, to update the subscription button’s glow effect, look for:
