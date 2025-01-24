@@ -38,12 +38,13 @@ A Decent Super Simple Smart Subscriber button
 ### 4. Start a Local Server
     If you have Python installed, you can quickly start a server with:
     
-    python -m http.server
+    python -m http.server public
 
     Then, open your browser and go to http://localhost:8000.
 
     Alternatively, you can use any other HTTP server like Node.js or VS Code Live Server.
-
+    npx http-server public
+    
 ## 🖌️ How to Make CSS Changes
 	1.	Open the styles.css file in the public/ folder.
 	2.	Find the section you’d like to modify. For example, to update the subscription button’s glow effect, look for:
