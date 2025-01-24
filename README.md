@@ -1,6 +1,6 @@
 # ⚸ 🔆[DecentSubscriptions](https://TheJollyLaMa.github.io/DecentSubscriptions/public)
 
-![Decent Subscription](./assets/SecretPyramid.png)
+![Decent Subscription](./public/assets/SecretPyramid.png)
 
 A Decent, Simple, Smart Subscriber button
 
