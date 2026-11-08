@@ -22,18 +22,37 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
     const walletConnectButton = document.getElementById("walletConnectButton");
+    let sessionGeneration = 0;
+    window.addEventListener('decenthead:wallet', event => {
+        sessionGeneration++;
+        subscriptionContract = null; walletProvider = null; userAddress = null;
+        document.getElementById('subscriptionGoodies').classList.add('hidden');
+        document.getElementById('subscriptionGoodies').style.display = 'none';
+        document.getElementById('updateFeeButton').classList.add('hidden');
+        document.getElementById('updateFeeControl').classList.add('hidden');
+        document.getElementById('subscriber-address').classList.add('hidden');
+        document.getElementById('influencer-address').classList.add('hidden');
+        document.getElementById('feeAmount').textContent = 'Unavailable until deployment verification';
+        document.getElementById('feeIcon').classList.add('hidden');
+        document.getElementById('status').textContent = '';
+        document.getElementById('timeline').replaceChildren();
+        document.getElementById('legacy-status').textContent = event.detail.connected ? 'Verifying legacy Polygon deployment…' : 'Disconnected; subscription actions unavailable.';
+        document.getElementById('subscribeButton').disabled = true;
+        document.getElementById('cancelButton').disabled = true;
+        if (event.detail.connected) walletConnectButton.click();
+    });
+    document.getElementById('subscribeButton').disabled = true;
+    document.getElementById('cancelButton').disabled = true;
     // Fetch and display subscription fee
     // Wallet Connection and Contract Initialization
     walletConnectButton.addEventListener("click", async () => {
+        const generation = sessionGeneration;
         try {
             await connectWallet();
             await initializeContract(contractAddress);
-            try {
-                const fee = await fetchSubscriptionFee();
-
-            } catch (error) {
-                console.error("Failed to fetch subscription fee:", error.message);
-            }
+            if (generation !== sessionGeneration || !subscriptionContract) throw new Error('Wallet session changed; review again');
+            await fetchSubscriptionFee();
+            if (generation !== sessionGeneration) throw new Error('Wallet session changed; review again');
             // Display subscriber address
             const subscriberDisplay = document.getElementById("subscriber-address");
             const polygonIcons = Array(4)
@@ -50,8 +69,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Check subscription status
             await checkSubscriptionStatus();
+            if (generation !== sessionGeneration) throw new Error('Wallet session changed; review again');
+            document.getElementById('subscribeButton').disabled = false;
+            document.getElementById('cancelButton').disabled = false;
+            document.getElementById('legacy-status').textContent = 'Legacy Polygon deployment verified. Review the fee and selected months; payment is explicit.';
 
         } catch (error) {
+            if (generation !== sessionGeneration) return;
+            subscriptionContract = null; walletProvider = null; userAddress = null;
+            document.getElementById('updateFeeButton').classList.add('hidden');
+            document.getElementById('updateFeeControl').classList.add('hidden');
+            document.getElementById('subscribeButton').disabled = true;
+            document.getElementById('cancelButton').disabled = true;
+            document.getElementById('subscriptionGoodies').classList.add('hidden');
+            document.getElementById('subscriptionGoodies').style.display = 'none';
+            document.getElementById('legacy-status').textContent = error.message;
             console.error("Error during wallet connection and initialization:", error.message);
         }
     });
@@ -63,7 +95,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Fetch Subscription Fee
 async function fetchSubscriptionFee() {
     try {
-        const fee = await subscriptionContract.subscriptionFee();
+        const contract = subscriptionContract, provider = walletProvider, account = userAddress;
+        const fee = await contract.subscriptionFee();
+        assertLegacyIdentity(provider, account);
+        if (contract !== subscriptionContract) throw new Error('Legacy contract changed; review again.');
         const formattedFee = ethers.utils.formatUnits(fee, "ether"); // Convert wei to POL
 
         // Add the fee text
@@ -87,8 +122,9 @@ async function subscribeUser() {
     }
 
     try {
+        const contract = await verifyLegacyOperation();
         // Fetch subscription fee in wei (already in wei due to incorrect deployment)
-        const fee = await subscriptionContract.subscriptionFee();
+        const fee = await contract.subscriptionFee();
         console.log("Subscription Fee in Wei:", fee.toString());
 
         // Calculate total fee for the selected number of months
@@ -96,7 +132,8 @@ async function subscribeUser() {
         console.log("Total Fee in Wei:", totalFee.toString());
 
         // Send the transaction
-        const tx = await subscriptionContract.subscribe(months, {
+        await verifyLegacyOperation(contract);
+        const tx = await contract.subscribe(months, {
             value: totalFee, // Send the exact fee in wei
             gasLimit: ethers.utils.hexlify(500000), // Optional: Add explicit gas limit
         });
@@ -113,7 +150,8 @@ async function subscribeUser() {
 // Cancel Subscription
 async function cancelSubscription() {
     try {
-        const tx = await subscriptionContract.cancelSubscription();
+        const contract = await verifyLegacyOperation();
+        const tx = await contract.cancelSubscription();
         await tx.wait();
 
         alert("Subscription canceled successfully.");
@@ -127,7 +165,10 @@ async function cancelSubscription() {
 // Check Subscription Status
 async function checkSubscriptionStatus() {
     try {
-        const isSubscribed = await subscriptionContract.isSubscribed(userAddress);
+        const contract = subscriptionContract, provider = walletProvider, account = userAddress;
+        const isSubscribed = await contract.isSubscribed(account);
+        assertLegacyIdentity(provider, account);
+        if (contract !== subscriptionContract) throw new Error('Legacy contract changed; review again.');
         console.log("Is Subscribed:", isSubscribed);
 
         const statusDiv = document.getElementById("status");
@@ -157,7 +198,7 @@ async function checkSubscriptionStatus() {
         }
     } catch (error) {
         console.error("Error checking subscription status:", error);
-        alert("Failed to retrieve subscription status.");
+        throw error;
     }
 }
 
@@ -168,12 +209,16 @@ async function updateSubscriptionFee(newFeeInput) {
     }
 
     try {
+        const contract = await verifyLegacyOperation();
+        const owner = await contract.owner();
+        if (owner.toLowerCase() !== userAddress.toLowerCase()) throw new Error('Only the verified contract owner may update fees.');
         // Convert new fee to wei
         const newFeeInWei = ethers.utils.parseUnits(newFeeInput, "ether");
         console.log("New Fee in Wei:", newFeeInWei.toString());
 
         // Send the transaction to update the fee
-        const tx = await subscriptionContract.updateSubscriptionFee(newFeeInWei);
+        await verifyLegacyOperation(contract);
+        const tx = await contract.updateSubscriptionFee(newFeeInWei);
         await tx.wait();
 
         alert(`Subscription fee updated to ${newFeeInput} POL.`);
@@ -186,6 +231,7 @@ async function updateSubscriptionFee(newFeeInput) {
 
 async function getAllContractEvents() {
     try {
+        const contract = subscriptionContract, provider = walletProvider, account = userAddress;
         const connectedAddress = userAddress.toLowerCase();
 
         const subscribedFilter = subscriptionContract.filters.Subscribed(connectedAddress);
@@ -239,6 +285,8 @@ async function getAllContractEvents() {
         // Sort events by timestamp
         filteredEvents.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
+        assertLegacyIdentity(provider, account);
+        if (contract !== subscriptionContract) throw new Error('Legacy contract changed; review again.');
         return filteredEvents;
     } catch (error) {
         console.error("Error fetching contract events:", error.message);
@@ -247,7 +295,10 @@ async function getAllContractEvents() {
 }
 
 async function displaySubscriptionTimeline() {
+    const contract = subscriptionContract, provider = walletProvider, account = userAddress;
     const timeline = await getAllContractEvents();
+    assertLegacyIdentity(provider, account);
+    if (contract !== subscriptionContract) throw new Error('Legacy contract changed; review again.');
 
     const timelineContainer = document.getElementById("timeline");
     if (timeline.length === 0) {

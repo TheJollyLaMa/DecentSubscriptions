@@ -1,18 +1,43 @@
 // Global Variables
 let subscriptionContract, walletProvider, userAddress;
 
+function assertLegacyIdentity(provider = walletProvider, account = userAddress) {
+    const session = window.DecentHead.getWallet();
+    const state = session.snapshot();
+    if (!provider || !account || provider !== walletProvider || account !== userAddress ||
+        !state.connected || state.address?.toLowerCase() !== account.toLowerCase() ||
+        BigInt(state.chainId) !== 137n) {
+        throw new Error('Legacy wallet session changed or wrong chain; reconnect and review.');
+    }
+}
+
+async function verifyLegacyOperation(contract = subscriptionContract) {
+    const provider = walletProvider, account = userAddress;
+    assertLegacyIdentity(provider, account);
+    if (!contract || contract !== subscriptionContract ||
+        Number((await provider.getNetwork()).chainId) !== 137 ||
+        await provider.getCode(contract.address) === '0x') {
+        throw new Error('Legacy Polygon deployment unavailable; no operations enabled');
+    }
+    assertLegacyIdentity(provider, account);
+    if (contract !== subscriptionContract) throw new Error('Legacy contract changed; review again.');
+    return contract;
+}
+
 // Connect Wallet
 async function connectWallet() {
-    if (typeof window.ethereum === "undefined") {
+    if (!window.DecentHead?.getWallet().snapshot().connected && !window.DecentHead?.getWallet().available().length) {
         alert("MetaMask is not installed! Please install MetaMask to use this application.");
         return;
     }
 
     try {
         // Connect wallet
-        walletProvider = new ethers.providers.Web3Provider(window.ethereum);
-        const accounts = await walletProvider.send("eth_requestAccounts", []);
-        userAddress = accounts[0];
+        const session = window.DecentHead.getWallet();
+        if (!session.snapshot().connected) await session.connect();
+        if (BigInt(session.snapshot().chainId) !== 137n) throw new Error("Legacy subscriptions require documented Polygon chain 137; no switch is automatic.");
+        walletProvider = new ethers.providers.Web3Provider(session.rawProvider, 'any');
+        userAddress = session.snapshot().address;
 
         console.log("Wallet connected:", userAddress);
 
@@ -22,7 +47,7 @@ async function connectWallet() {
         walletButton.classList.add("connected");
     } catch (error) {
         console.error("Error connecting wallet:", error.message);
-        alert(error.message);
+        throw error;
     }
 }
 
@@ -33,9 +58,18 @@ async function initializeContract(contractAddress) {
             throw new Error("Wallet is not connected. Please connect your wallet first.");
         }
 
+        const provider = walletProvider, account = userAddress;
         const abi = await loadABI();
-        const signer = walletProvider.getSigner();
-        subscriptionContract = new ethers.Contract(contractAddress, abi, signer);
+        if (Number((await provider.getNetwork()).chainId) !== 137 ||
+            await provider.getCode(contractAddress) === '0x') {
+            throw new Error('Legacy Polygon deployment unavailable; no operations enabled');
+        }
+        assertLegacyIdentity(provider, account);
+        const signer = provider.getSigner();
+        const candidate = new ethers.Contract(contractAddress, abi, signer);
+        const influencerAddress = await candidate.owner();
+        assertLegacyIdentity(provider, account);
+        subscriptionContract = candidate;
 
         console.log("Decent Subscription Contract Initialized:", subscriptionContract.address);
 
@@ -56,7 +90,6 @@ async function initializeContract(contractAddress) {
         }
 
         // Display influencer address (owner of the contract)
-        const influencerAddress = await subscriptionContract.owner();
         const influencerDisplay = document.getElementById("influencer-address");
         if (influencerDisplay) {
             influencerDisplay.innerHTML = `
@@ -70,18 +103,18 @@ async function initializeContract(contractAddress) {
 
         // Show Update Fee Button if the connected wallet is the owner
         if (userAddress.toLowerCase() === influencerAddress.toLowerCase()) {
-            const updateFeeButton = document.getElementById("updateFeeButton");
+            const updateFeeButton = document.getElementById("updateFeeControl");
             updateFeeButton.classList.remove("hidden");
-            updateFeeButton.addEventListener("click", () => {
+            updateFeeButton.onclick = () => {
                 // Add logic for updating the fee (e.g., open a modal or input field)
                 const newFee = prompt("Enter the new subscription fee (in POL):");
                 if (newFee) updateSubscriptionFee(newFee);
-            });
+            };
         }
 
     } catch (error) {
         console.error("Error initializing contract:", error.message);
-        alert(error.message);
+        throw error;
     }
 }
 
