@@ -1,0 +1,9 @@
+{
+  "kind": "subscriptions",
+  "title": "DecentSubscriptions V1",
+  "contractName": "DecentSubscriptionsV1",
+  "port": 4313,
+  "mode": "unconfigured",
+  "chainId": null,
+  "address": ""
+}

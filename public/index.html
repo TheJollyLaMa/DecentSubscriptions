@@ -9,7 +9,9 @@
 
 </head>
 <body>
-    <header class="header">
+    <decent-header></decent-header>
+    <script type="module" src="../decent-head.js"></script>
+    <header class="header" hidden style="display:none">
 
         <button id="updateFeeButton" class="hidden">Update Fee</button>
 
@@ -22,6 +24,9 @@
         </button>
     </header>
     <div class="container">
+        <p id="legacy-status" role="status">Connect explicitly to verify the legacy Polygon deployment. No automatic payment or renewal.</p>
+        <p><a href="../default/index.html">Open the default prepaid subscription workspace</a></p>
+        <button id="updateFeeControl" class="hidden">Update Fee</button>
         <h1 class="neon-text">Subscribe to a Decent Future!</h1>
         <div class="subscription-wrapper">
             <div class="subscription-button">
